@@ -20,6 +20,7 @@
   "homepage": "https://github.com/AYLitvinov/poems-notificator-bot#readme",
   "dependencies": {
     "axios": "^1.2.4",
+    "mongodb": "^4.13.0",
     "telegraf": "^4.11.2"
   },
   "devDependencies": {

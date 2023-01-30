@@ -1,4 +1,7 @@
-export const KEYBOARD_MENU = [
+import {InlineKeyboardButton} from "telegraf/typings/core/types/typegram";
+import {Group} from "../models/group.model";
+
+export const KEYBOARD_MAIN_MENU: InlineKeyboardButton[][] = [
     [
         {
             text: 'Получить список моих групп',
@@ -22,3 +25,19 @@ export const KEYBOARD_MENU = [
         }
     ]
 ];
+
+export const getDeleteGroupMenu = (groupIds: number[], groups: Group[]): InlineKeyboardButton[][] => {
+    const groupsMap = groups.reduce((result, group) => {
+        result.set(group.id, group);
+        return result;
+    }, new Map<number, Group>());
+
+    return groupIds.reduce<InlineKeyboardButton[][]>((result, groupId) => {
+        const group = groupsMap.get(groupId);
+        result.push([{
+            text: group!.name,
+            callback_data: `${group!.id}`,
+        }])
+        return result;
+    }, [])
+};
