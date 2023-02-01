@@ -25,6 +25,11 @@ export class DbService {
         return db.collection(GROUPS_COLLECTION_NAME)
     }
 
+    async getChats(): Promise<Chat[]> {
+        const chats = await this.getChatsCollection();
+        return chats.find({}).toArray();
+    }
+
     async getChatById(chatId: number): Promise<Chat | null> {
         const chats = await this.getChatsCollection();
         return chats.findOne({chatId});
@@ -55,13 +60,14 @@ export class DbService {
         return groups.find({}).toArray();
     }
 
-    async deleteChatById(chatId: number): Promise<boolean> {
-        const chats = await this.getChatsCollection();
-        return !!await chats.deleteOne({chatId});
+    async getGroupsByChatId(chatId: number): Promise<Group[] | null> {
+        const groups = await this.getGroups();
+        const groupIds = (await this.getChatById(chatId))?.groupIds || [];
+        return (groups || []).filter(group => groupIds.includes(group.id));
     }
 
-    async addGroupToChat(chatId: number, ): Promise<boolean> {
-        const chats = await this.getChatsCollection();
-        return !!await chats.deleteOne({chatId});
+    async removeGroup(groupId: number): Promise<boolean> {
+        const groups = await this.getGroupsCollection();
+        return !! await groups.deleteOne({id: groupId});
     }
 }

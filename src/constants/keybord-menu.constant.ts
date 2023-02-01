@@ -36,7 +36,7 @@ export const getDeleteGroupMenu = (groupIds: number[], groups: Group[]): InlineK
         const group = groupsMap.get(groupId);
         result.push([{
             text: group!.name,
-            callback_data: `${group!.id}`,
+            callback_data: `id_${group!.id}`,
         }])
         return result;
     }, [])
