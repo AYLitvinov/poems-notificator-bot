@@ -3,6 +3,7 @@ import {Update} from 'typegram';
 import {getDeleteGroupMenu, KEYBOARD_MAIN_MENU} from './constants/keybord-menu.constant';
 import {VkApiService} from './services/vk-api.service';
 import {DbService} from './services/db.service';
+import {BotActions} from './models/bot.model';
 
 const bot: Telegraf<Context<Update>> = new Telegraf(process.env.BOT_TOKEN as string);
 const vkApiService = new VkApiService();
@@ -11,11 +12,13 @@ const dbService = new DbService();
 bot.start(async (ctx) => {
     const chatId = ctx.chat.id;
     const chat = await dbService.getChatById(chatId);
+
     if (!chat) {
-        dbService.addNewChat(chatId, [])
-            .then(() => {
-                console.log(`Добавлен чат с id: ${chatId}`)
-            });
+        const isNewChatAdded = await dbService.addNewChat(chatId, []);
+
+        if (isNewChatAdded) {
+            console.log(`Добавлен чат с id: ${chatId}`);
+        }
     }
 
     ctx.reply('Привет!', {
@@ -41,7 +44,7 @@ bot.on('text', async (ctx) => {
     const pattern = new RegExp('https:\\/\\/vk.com');
     if (link.match(pattern)) {
         const groupId = link.split('/').pop() || '';
-        const groupInfo = ((await vkApiService.getGroupInfo(groupId)) || []).shift(); // всегда будет первый элемент
+        const groupInfo = ((await vkApiService.getGroupInfo(groupId)) || []).shift(); // always first element
         const chat = await dbService.getChatById(chatId);
 
         let isChatUpdated = false;
@@ -50,6 +53,10 @@ bot.on('text', async (ctx) => {
         if (groupInfo) {
             if (!chat!.groupIds.includes(groupInfo.id)) {
                 isChatUpdated = await dbService.updateChat(chatId, [...chat!.groupIds, groupInfo.id]);
+
+                if (isChatUpdated) {
+                    console.log(`Группа с id: ${groupInfo.id} добавлена в чат с id: ${chatId}`);
+                }
             }
 
             const isGroupAlreadyAdded = !!await dbService.getGroupById(groupInfo.id);
@@ -60,16 +67,20 @@ bot.on('text', async (ctx) => {
                     domainName: groupInfo.screen_name,
                     wallItems: []
                 });
+
+            if (isGroupAdded) {
+                console.log(`Группа с id: ${groupInfo.id} была добавлена`)
+            }
         }
 
 
-        if (isChatUpdated && isGroupAdded) {
-            ctx.reply(`Группа добавлена: ${link}`);
+        if (isChatUpdated) {
+            ctx.reply(`Группа добавлена.`);
         }
     }
 })
 
-bot.action('get_all', async (ctx) => {
+bot.action(BotActions.GET_ALL_GROUPS, async (ctx) => {
     const chatId = (await ctx.getChat()).id;
     const groups = await dbService.getGroupsByChatId(chatId);
 
@@ -80,26 +91,30 @@ bot.action('get_all', async (ctx) => {
         });
 });
 
-bot.action('add', (ctx) => {
+bot.action(BotActions.ADD_GROUP, (ctx) => {
     ctx.answerCbQuery()
         .then(() => {
             ctx.reply('Чтобы добавить группу откуда ты хочешь получать записи, пришли мне на нее ссылку. Прим.: https://vk.com/example_group_name');
         });
 });
 
-bot.action('remove', async (ctx) => {
+bot.action(BotActions.REMOVE_GROUP, async (ctx) => {
     const chatId = (await ctx.getChat()).id;
     const groupIds = (await dbService.getChatById(chatId))?.groupIds;
     const groups = (await dbService.getGroups()) || [];
 
     ctx.answerCbQuery()
         .then(() => {
-            ctx.sendMessage('Выбери группу, которую ты хочешь удалить:', {
-                    reply_markup: {
-                        inline_keyboard: getDeleteGroupMenu(groupIds || [], groups),
-                    },
-                }
-            );
+            if (groups.length > 0) {
+                ctx.sendMessage('Выбери группу, которую ты хочешь удалить:', {
+                        reply_markup: {
+                            inline_keyboard: getDeleteGroupMenu(groupIds || [], groups),
+                        },
+                    }
+                );
+            } else {
+                ctx.sendMessage('Нет добавленных групп.')
+            }
         });
 });
 
@@ -107,59 +122,67 @@ bot.action(new RegExp(/^id_\d*/), async (ctx) => {
     const chatId = (await ctx.getChat()).id;
     const groupId = Number((ctx.update.callback_query as any).data.replace('id_', ''));
 
-    if (groupId) {
-        const chat = await dbService.getChatById(chatId);
-        const isGroupIdRemovedFromChat = chat ?
-            await dbService.updateChat(chatId, chat.groupIds.filter(id => id !== groupId)) : false;
+    const chat = await dbService.getChatById(chatId);
+    const isGroupIdRemovedFromChat = chat ?
+        await dbService.updateChat(chatId, chat.groupIds.filter(id => id !== groupId)) : false;
 
-        ctx.answerCbQuery()
-            .then(() => {
-                if (isGroupIdRemovedFromChat) {
-                    ctx.reply('Группа удалена.')
-                } else {
-                    ctx.reply('Не удалось удалить группу.')
-                }
-            });
+    ctx.answerCbQuery()
+        .then(() => {
+            if (isGroupIdRemovedFromChat) {
+                ctx.reply('Группа удалена.')
+                console.log(`Группа с id: ${groupId} удалена из чата с id: ${chatId}`);
+            } else {
+                ctx.reply('Не удалось удалить группу.')
+            }
+        });
+
+    const chats = await dbService.getChats();
+    const isGroupIdExistsInOtherChat = chats.some(chat => chat.groupIds.includes(groupId));
+
+    if (!isGroupIdExistsInOtherChat) {
+        dbService.removeGroup(groupId).then(() => {
+            console.log(`Группа с id: ${groupId} удалена`);
+        });
+    }
+});
+
+bot.action(BotActions.REMOVE_ALL_GROUPS, async (ctx) => {
+    const chatId = (await ctx.getChat()).id;
+    const chat = await dbService.getChatById(chatId);
+
+    if ((chat?.groupIds || []).length > 0) {
+        const isChatUpdated = await dbService.updateChat(chatId, []);
 
         const chats = await dbService.getChats();
-        const isGroupIdExistsInOtherChat = chats.some(chat => chat.groupIds.includes(groupId));
 
-        if (!isGroupIdExistsInOtherChat) {
-            dbService.removeGroup(groupId);
+        const existsGroupIds = chats.reduce((result, chat) => {
+            chat.groupIds.forEach(groupId => {
+                result.add(groupId);
+            })
+            return result;
+        }, new Set<number>());
+
+        (chat?.groupIds || [])
+            .forEach(removedGroupId => { // group id from removed chat
+                if (!existsGroupIds.has(removedGroupId)) {
+                    dbService.removeGroup(removedGroupId)
+                        .then(() => {
+                            console.log(`Удалена группа с id: ${removedGroupId}`);
+                        });
+                }
+            })
+
+        if (isChatUpdated) {
+            ctx.answerCbQuery()
+                .then(() => {
+                    ctx.reply('Вы отписались от всех групп.');
+                    console.log(`Все группы удалены из чата с id: ${chatId}`);
+                });
         }
     } else {
         ctx.answerCbQuery()
             .then(() => {
-                ctx.reply('Не удалось удалить группу.')
-            })
-    }
-});
-
-bot.action('remove_all', async (ctx) => {
-    const chatId = (await ctx.getChat()).id;
-    const chat = await dbService.getChatById(chatId);
-    const isChatUpdated = await dbService.updateChat(chatId, []);
-
-    const chats = await dbService.getChats();
-
-    const existsGroupIds = chats.reduce((result, chat) => {
-        chat.groupIds.forEach(groupId => {
-            result.add(groupId);
-        })
-        return result;
-    }, new Set<number>());
-
-    (chat?.groupIds || [])
-        .forEach(removedGroupId => { // group id from removed chat
-            if (!existsGroupIds.has(removedGroupId)) {
-                dbService.removeGroup(removedGroupId);
-            }
-        })
-
-    if (isChatUpdated) {
-        ctx.answerCbQuery()
-            .then(() => {
-                ctx.reply('Вы отписались от всех групп.');
+                ctx.reply('Нет добавленных групп.');
             })
     }
 });

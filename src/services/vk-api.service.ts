@@ -21,7 +21,7 @@ export class VkApiService {
                 if (!this.isError(response.data)) {
                     return (<VkApiGroupInfo>response.data).response;
                 } else {
-                    console.log((<VkApiError>response.data).error)
+                    console.log(`Ошибка при получении данных о группе: ${(<VkApiError>response.data).error}`);
                     return null;
                 }
             })
@@ -43,7 +43,7 @@ export class VkApiService {
                 if (!this.isError(response.data)) {
                     return (<VkApiGroupWallItems>response.data).response;
                 } else {
-                    console.log((<VkApiError>response.data).error)
+                    console.log(`Ошибка при получении записей группы: ${(<VkApiError>response.data).error}`);
                     return null;
                 }
             })
