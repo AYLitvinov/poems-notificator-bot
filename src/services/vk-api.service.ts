@@ -37,6 +37,7 @@ export class VkApiService {
                 owner_id: `-${groupId}`,
                 access_token: process.env.VK_API_TOKEN as string,
                 v: API_VERSION,
+                count: 10,
             }
         })
             .then(response => {

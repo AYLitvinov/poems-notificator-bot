@@ -4,10 +4,26 @@ import {getDeleteGroupMenu, KEYBOARD_MAIN_MENU} from './constants/keybord-menu.c
 import {VkApiService} from './services/vk-api.service';
 import {DbService} from './services/db.service';
 import {BotActions} from './models/bot.model';
+import {CronService} from "./services/cron.service";
+import {SubscriptionService} from "./services/subscription.service";
 
 const bot: Telegraf<Context<Update>> = new Telegraf(process.env.BOT_TOKEN as string);
 const vkApiService = new VkApiService();
 const dbService = new DbService();
+const cronService = new CronService();
+const subscriptionService = new SubscriptionService(dbService, cronService, vkApiService);
+
+subscriptionService.getUpdateEvent()
+    .subscribe(event => {
+        event.chatIds.forEach(chatId => {
+            event.wallItems.forEach(wallItem => {
+                if (wallItem.text) {
+                    bot.telegram.sendMessage(chatId, `Новая запись от ${event.groupName}:\n${wallItem.text}`);
+                }
+            })
+            console.log(`Отправлены новые записи в чат с id: ${chatId}`);
+        })
+    })
 
 bot.start(async (ctx) => {
     const chatId = ctx.chat.id;
@@ -69,7 +85,8 @@ bot.on('text', async (ctx) => {
                 });
 
             if (isGroupAdded) {
-                console.log(`Группа с id: ${groupInfo.id} была добавлена`)
+                subscriptionService.addNewGroup(groupInfo.id, groupInfo.name);
+                console.log(`Группа с id: ${groupInfo.id} была добавлена`);
             }
         }
 
@@ -141,6 +158,7 @@ bot.action(new RegExp(/^id_\d*/), async (ctx) => {
 
     if (!isGroupIdExistsInOtherChat) {
         dbService.removeGroup(groupId).then(() => {
+            subscriptionService.removeGroup(groupId);
             console.log(`Группа с id: ${groupId} удалена`);
         });
     }
@@ -167,6 +185,7 @@ bot.action(BotActions.REMOVE_ALL_GROUPS, async (ctx) => {
                 if (!existsGroupIds.has(removedGroupId)) {
                     dbService.removeGroup(removedGroupId)
                         .then(() => {
+                            subscriptionService.removeGroup(removedGroupId);
                             console.log(`Удалена группа с id: ${removedGroupId}`);
                         });
                 }

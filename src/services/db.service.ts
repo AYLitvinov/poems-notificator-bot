@@ -1,6 +1,6 @@
 import {Collection, Db, MongoClient} from 'mongodb';
 import {Chat} from "../models/chat.model";
-import {Group} from "../models/group.model";
+import {Group, GroupWallItem} from "../models/group.model";
 
 const POEMS_NOTIFICATOR_DATABASE_NAME = 'poems-notificator';
 
@@ -48,6 +48,11 @@ export class DbService {
     async addNewGroup(group: Group): Promise<boolean> {
         const groups = await this.getGroupsCollection();
         return !!await groups.insertOne(group);
+    }
+
+    async updateGroupWallItems(groupId: number, wallItems: GroupWallItem[]): Promise<boolean> {
+        const groups = await this.getGroupsCollection();
+        return !!await groups.updateOne({id: groupId}, {$set: {wallItems}});
     }
 
     async getGroupById(groupId: number): Promise<Group | null> {
