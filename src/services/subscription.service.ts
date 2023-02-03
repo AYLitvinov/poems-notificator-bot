@@ -34,6 +34,7 @@ export class SubscriptionService {
     }
 
     private emitSubscriptionEvents(groupId: number, groupName: string): void {
+        console.log(`Проверяю записи для группы с id: ${groupId}`);
         this.getSubscriptionEvent(groupId, groupName)
             .then(event => {
                 if (event) {
@@ -58,8 +59,8 @@ export class SubscriptionService {
             return null;
         }
 
-        const wallItemsToUser = newWallItems.filter((newWallItem, index) =>
-            newWallItem.id !== oldWallItems[index].id && newWallItem.text !== oldWallItems[index].text);
+        const wallItemsToUser = newWallItems
+            .filter(newWallItem => !oldWallItems.find(item => newWallItem.id === item.id));
 
         if (wallItemsToUser.length) {
             const isWallItemsUpdated = await this.dbService.updateGroupWallItems(groupId, newWallItems);

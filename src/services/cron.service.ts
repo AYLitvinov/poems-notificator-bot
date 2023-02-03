@@ -1,6 +1,6 @@
 import { CronJob } from 'cron';
 
-const CRON_INTERVAL_FIVE_MINUTES = '*/1 * * * *'; // todo return 5
+const CRON_INTERVAL_FIVE_MINUTES = '*/5 * * * *';
 
 export class CronService {
     private activeCrons = new Map<number, CronJob>;
@@ -16,7 +16,9 @@ export class CronService {
     stopCron(groupId: number): void {
         const cron = this.activeCrons.get(groupId);
         if (cron) {
+
             cron.stop();
+
             this.activeCrons.delete(groupId);
         }
     }

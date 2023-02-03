@@ -18,7 +18,7 @@ subscriptionService.getUpdateEvent()
         event.chatIds.forEach(chatId => {
             event.wallItems.forEach(wallItem => {
                 if (wallItem.text) {
-                    bot.telegram.sendMessage(chatId, `Новая запись от ${event.groupName}:\n${wallItem.text}`);
+                    bot.telegram.sendMessage(chatId, `Новая запись от ${event.groupName}:\n\n${wallItem.text}`);
                 }
             })
             console.log(`Отправлены новые записи в чат с id: ${chatId}`);
