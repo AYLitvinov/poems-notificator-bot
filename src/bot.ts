@@ -1,11 +1,11 @@
-import {Context, Telegraf} from 'telegraf';
-import {Update} from 'typegram';
-import {getDeleteGroupMenu, KEYBOARD_MAIN_MENU} from './constants/keybord-menu.constant';
-import {VkApiService} from './services/vk-api.service';
-import {DbService} from './services/db.service';
-import {BotActions} from './models/bot.model';
-import {CronService} from "./services/cron.service";
-import {SubscriptionService} from "./services/subscription.service";
+import { Context, Telegraf } from 'telegraf';
+import { Update } from 'typegram';
+import { getDeleteGroupMenu, KEYBOARD_MAIN_MENU } from './constants/keybord-menu.constant';
+import { VkApiService } from './services/vk-api.service';
+import { DbService } from './services/db.service';
+import { BotActions } from './models/bot.model';
+import { CronService } from './services/cron.service';
+import { SubscriptionService } from './services/subscription.service';
 
 const bot: Telegraf<Context<Update>> = new Telegraf(process.env.BOT_TOKEN as string);
 const vkApiService = new VkApiService();
@@ -21,7 +21,7 @@ subscriptionService.getUpdateEvent()
                     bot.telegram.sendMessage(chatId, `Новая запись от ${event.groupName}:\n\n${wallItem.text}`);
                 }
             })
-            console.log(`Отправлены новые записи в чат с id: ${chatId}`);
+            console.log(`New wall items sended to chat with id: ${chatId}`);
         })
     })
 
@@ -33,7 +33,7 @@ bot.start(async (ctx) => {
         const isNewChatAdded = await dbService.addNewChat(chatId, []);
 
         if (isNewChatAdded) {
-            console.log(`Добавлен чат с id: ${chatId}`);
+            console.log(`New chat added with id: ${chatId}`);
         }
     }
 
@@ -71,7 +71,7 @@ bot.on('text', async (ctx) => {
                 isChatUpdated = await dbService.updateChat(chatId, [...chat!.groupIds, groupInfo.id]);
 
                 if (isChatUpdated) {
-                    console.log(`Группа с id: ${groupInfo.id} добавлена в чат с id: ${chatId}`);
+                    console.log(`Group with id: ${groupInfo.id} added to chat with id: ${chatId}`);
                 }
             }
 
@@ -86,7 +86,7 @@ bot.on('text', async (ctx) => {
 
             if (isGroupAdded) {
                 subscriptionService.addNewGroup(groupInfo.id, groupInfo.name);
-                console.log(`Группа с id: ${groupInfo.id} была добавлена`);
+                console.log(`Group with id: ${groupInfo.id} added`);
             }
         }
 
@@ -147,7 +147,7 @@ bot.action(new RegExp(/^id_\d*/), async (ctx) => {
         .then(() => {
             if (isGroupIdRemovedFromChat) {
                 ctx.reply('Группа удалена.')
-                console.log(`Группа с id: ${groupId} удалена из чата с id: ${chatId}`);
+                console.log(`Group with id: ${groupId} was removed from the chat with id: ${chatId}`);
             } else {
                 ctx.reply('Не удалось удалить группу.')
             }
@@ -159,7 +159,7 @@ bot.action(new RegExp(/^id_\d*/), async (ctx) => {
     if (!isGroupIdExistsInOtherChat) {
         dbService.removeGroup(groupId).then(() => {
             subscriptionService.removeGroup(groupId);
-            console.log(`Группа с id: ${groupId} удалена`);
+            console.log(`Group with id: ${groupId} has been removed`);
         });
     }
 });
@@ -186,7 +186,7 @@ bot.action(BotActions.REMOVE_ALL_GROUPS, async (ctx) => {
                     dbService.removeGroup(removedGroupId)
                         .then(() => {
                             subscriptionService.removeGroup(removedGroupId);
-                            console.log(`Удалена группа с id: ${removedGroupId}`);
+                            console.log(`Removed group with id: ${removedGroupId}`);
                         });
                 }
             })
@@ -195,7 +195,7 @@ bot.action(BotActions.REMOVE_ALL_GROUPS, async (ctx) => {
             ctx.answerCbQuery()
                 .then(() => {
                     ctx.reply('Вы отписались от всех групп.');
-                    console.log(`Все группы удалены из чата с id: ${chatId}`);
+                    console.log(`All groups removed from chat with id: ${chatId}`);
                 });
         }
     } else {

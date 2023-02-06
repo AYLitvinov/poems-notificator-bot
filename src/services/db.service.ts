@@ -1,14 +1,16 @@
-import {Collection, Db, MongoClient} from 'mongodb';
-import {Chat} from "../models/chat.model";
-import {Group, GroupWallItem} from "../models/group.model";
+import { Collection, Db, MongoClient } from 'mongodb';
+import { Chat } from '../models/chat.model';
+import { Group, GroupWallItem } from '../models/group.model';
 
 const POEMS_NOTIFICATOR_DATABASE_NAME = 'poems-notificator';
 
 const CHATS_COLLECTION_NAME = 'chats';
 const GROUPS_COLLECTION_NAME = 'groups';
 
+const MONGO_DB_URL = `mongodb://db:27017/`;
+
 export class DbService {
-    private mongoDbClient: Promise<MongoClient> = new MongoClient('mongodb://localhost:27017/').connect();
+    private mongoDbClient: Promise<MongoClient> = new MongoClient(MONGO_DB_URL).connect();
 
     async getDb(): Promise<Db> {
         const client = await this.mongoDbClient;

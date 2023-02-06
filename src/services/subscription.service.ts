@@ -1,9 +1,9 @@
-import {DbService} from "./db.service";
-import {CronService} from "./cron.service";
-import {VkApiService} from "./vk-api.service";
-import {GroupWallItem} from "../models/group.model";
-import {SubscriptionEvent} from "../models/subscription.model";
-import {Observable, Subject} from "rxjs";
+import { DbService } from './db.service';
+import { CronService } from './cron.service';
+import { VkApiService } from './vk-api.service';
+import { GroupWallItem } from '../models/group.model';
+import { SubscriptionEvent } from '../models/subscription.model';
+import { Observable, Subject } from 'rxjs';
 
 export class SubscriptionService {
     private updateEvent = new Subject<SubscriptionEvent>();
@@ -34,7 +34,7 @@ export class SubscriptionService {
     }
 
     private emitSubscriptionEvents(groupId: number, groupName: string): void {
-        console.log(`Проверяю записи для группы с id: ${groupId}`);
+        console.log(`Checking new wall items for a group with id: ${groupId}`);
         this.getSubscriptionEvent(groupId, groupName)
             .then(event => {
                 if (event) {
@@ -54,7 +54,7 @@ export class SubscriptionService {
             const isWallItemsUpdated = await this.dbService.updateGroupWallItems(groupId, newWallItems);
 
             if (isWallItemsUpdated) {
-                console.log(`Обновлены записи группы с id: ${groupId}`);
+                console.log(`Updated group wall items with id: ${groupId}`);
             }
             return null;
         }
@@ -66,7 +66,7 @@ export class SubscriptionService {
             const isWallItemsUpdated = await this.dbService.updateGroupWallItems(groupId, newWallItems);
 
             if (isWallItemsUpdated) {
-                console.log(`Обновлены записи группы с id: ${groupId}`);
+                console.log(`Updated group wall items with id: ${groupId}`);
             }
             return wallItemsToUser;
         }

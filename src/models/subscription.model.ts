@@ -1,4 +1,4 @@
-import {GroupWallItem} from "./group.model";
+import { GroupWallItem } from './group.model';
 
 export interface SubscriptionEvent {
     readonly chatIds: number[];

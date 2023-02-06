@@ -1,27 +1,28 @@
-import {InlineKeyboardButton} from "telegraf/typings/core/types/typegram";
-import {Group} from "../models/group.model";
+import { InlineKeyboardButton } from 'telegraf/typings/core/types/typegram';
+import { Group } from '../models/group.model';
+import { BotActions } from '../models/bot.model';
 
 export const KEYBOARD_MAIN_MENU: InlineKeyboardButton[][] = [
     [
         {
             text: 'Получить список моих групп',
-            callback_data: 'get_all',
+            callback_data: BotActions.GET_ALL_GROUPS,
         },
     ],
     [
         {
             text: 'Добавить группу',
-            callback_data: 'add',
+            callback_data: BotActions.ADD_GROUP,
         },
         {
             text: 'Удалить группу',
-            callback_data: 'remove',
+            callback_data: BotActions.REMOVE_GROUP,
         },
     ],
     [
         {
             text: 'Отписаться от всех групп',
-            callback_data: 'remove_all'
+            callback_data: BotActions.REMOVE_ALL_GROUPS,
         }
     ]
 ];
