@@ -206,6 +206,10 @@ bot.action(BotActions.REMOVE_ALL_GROUPS, async (ctx) => {
     }
 });
 
+bot.catch(err => {
+    console.log(err);
+});
+
 bot.launch();
 
 process.once('SIGINT', () => bot.stop('SIGINT'));
